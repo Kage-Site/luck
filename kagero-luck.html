@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>KAGERO LUCK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Cinzel:wght@500;700&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#07080d;
+    --bg-1:#0d0f18;
+    --bg-2:#14121a;
+    --vermilion:#b4402a;
+    --vermilion-bright:#e0552f;
+    --gold:#c9a24b;
+    --gold-bright:#f0cd7a;
+    --ash:#ece4d3;
+    --ash-dim:#9a9488;
+    --plum:#6b2c6b;
+    --plum-bright:#a752b0;
+    --loss:#5a4640;
+    --line:rgba(201,162,75,0.28);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg-0);
+    color:var(--ash);
+    font-family:'Manrope',sans-serif;
+    overflow-x:hidden;
+  }
+
+  .stage{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px 16px;
+    isolation:isolate;
+  }
+
+  canvas#embers, canvas#fireworks{
+    position:fixed; inset:0;
+    width:100%; height:100%;
+    pointer-events:none;
+  }
+  canvas#embers{ z-index:0; }
+  canvas#fireworks{ z-index:5; }
+
+  .haze-layer{
+    position:fixed; inset:-10%;
+    z-index:1;
+    pointer-events:none;
+    background:
+      radial-gradient(ellipse 60% 40% at 30% 20%, rgba(180,64,42,0.16), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 75% 75%, rgba(107,44,107,0.14), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 50% 100%, rgba(201,162,75,0.08), transparent 60%);
+    filter: url(#heat-haze);
+    opacity:0.9;
+  }
+
+  .vignette{
+    position:fixed; inset:0; z-index:2; pointer-events:none;
+    background:radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(4,4,7,0.75) 100%);
+  }
+
+  /* ---------- Panel / Torii frame ---------- */
+  .panel{
+    position:relative;
+    z-index:10;
+    width:100%;
+    max-width:460px;
+    padding:38px 30px 30px;
+    background:linear-gradient(180deg, rgba(18,17,26,0.92), rgba(10,10,15,0.96));
+    border:1px solid var(--line);
+    border-radius:6px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.4),
+      0 30px 80px -20px rgba(0,0,0,0.8),
+      0 0 60px -10px rgba(180,64,42,0.12);
+    overflow:hidden;
+  }
+
+  .panel::before, .panel::after{
+    content:"";
+    position:absolute;
+    width:34px; height:34px;
+    border:2px solid var(--gold);
+    opacity:0.55;
+  }
+  .panel::before{ top:10px; left:10px; border-right:none; border-bottom:none; }
+  .panel::after{ bottom:10px; right:10px; border-left:none; border-top:none; }
+
+  .kanji-watermark{
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-52%);
+    font-family:'Cinzel', serif;
+    font-size:340px;
+    line-height:1;
+    color:transparent;
+    -webkit-text-stroke:1px rgba(201,162,75,0.10);
+    user-select:none;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .panel > *{ position:relative; z-index:1; }
+
+  /* ---------- Header ---------- */
+  header{ text-align:center; margin-bottom:26px; }
+
+  .eyebrow{
+    display:block;
+    font-size:11px;
+    letter-spacing:0.35em;
+    text-transform:uppercase;
+    color:var(--gold);
+    opacity:0.75;
+    margin-bottom:10px;
+  }
+
+  h1{
+    font-family:'Cinzel', serif;
+    font-weight:700;
+    font-size:42px;
+    letter-spacing:0.08em;
+    margin:0;
+    color:var(--ash);
+    text-shadow:0 0 18px rgba(201,162,75,0.35);
+  }
+  h1 span{
+    display:block;
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:19px;
+    letter-spacing:0.5em;
+    color:var(--vermilion-bright);
+    margin-top:4px;
+  }
+
+  .subtitle{
+    margin:14px auto 0;
+    max-width:320px;
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--ash-dim);
+    font-style:italic;
+    font-family:'Cormorant Garamond',serif;
+  }
+
+  /* ---------- Balance ---------- */
+  .balance-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:center;
+    gap:8px;
+    margin:24px 0 22px;
+    padding:14px 0;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .balance-label{
+    font-size:11px;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:var(--ash-dim);
+  }
+  .balance-value{
+    font-family:'Cinzel',serif;
+    font-size:26px;
+    color:var(--gold-bright);
+    font-weight:700;
+    transition:transform .25s ease;
+  }
+  .balance-value.pulse{ transform:scale(1.12); }
+  .balance-unit{ font-size:13px; color:var(--ash-dim); }
+
+  /* ---------- Bet grid ---------- */
+  .section-label{
+    font-size:11px;
+    letter-spacing:0.25em;
+    text-transform:uppercase;
+    color:var(--ash-dim);
+    margin-bottom:10px;
+    text-align:center;
+  }
+
+  .bet-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:9px;
+    margin-bottom:20px;
+  }
+
+  .bet-btn{
+    padding:11px 4px;
+    background:rgba(201,162,75,0.06);
+    border:1px solid var(--line);
+    border-radius:4px;
+    color:var(--ash);
+    font-family:'Manrope',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    transition:all .18s ease;
+    letter-spacing:0.02em;
+  }
+  .bet-btn:hover:not(:disabled){
+    border-color:var(--gold);
+    background:rgba(201,162,75,0.14);
+    transform:translateY(-1px);
+  }
+  .bet-btn.active{
+    background:linear-gradient(180deg, rgba(201,162,75,0.28), rgba(201,162,75,0.1));
+    border-color:var(--gold-bright);
+    color:var(--gold-bright);
+    box-shadow:0 0 14px rgba(201,162,75,0.25) inset, 0 0 10px rgba(201,162,75,0.2);
+  }
+  .bet-btn:disabled{ opacity:0.3; cursor:not-allowed; }
+
+  /* ---------- Play button ---------- */
+  .play-btn{
+    width:100%;
+    padding:15px 10px;
+    margin-bottom:22px;
+    background:linear-gradient(180deg, var(--vermilion-bright), var(--vermilion));
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:4px;
+    color:#fff2e8;
+    font-family:'Cinzel',serif;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    cursor:pointer;
+    box-shadow:0 10px 30px -8px rgba(180,64,42,0.6);
+    transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  }
+  .play-btn:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 14px 34px -8px rgba(180,64,42,0.75); }
+  .play-btn:active:not(:disabled){ transform:translateY(0px) scale(0.99); }
+  .play-btn:disabled{ opacity:0.4; cursor:not-allowed; filter:grayscale(0.4); }
+
+  /* ---------- Result window ---------- */
+  .result-window{
+    position:relative;
+    min-height:132px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:18px 10px;
+    margin-bottom:20px;
+    background:radial-gradient(ellipse at center, rgba(255,255,255,0.03), transparent 70%), rgba(0,0,0,0.28);
+    border:1px solid var(--line);
+    border-radius:6px;
+    overflow:hidden;
+    transition:border-color .3s ease, box-shadow .3s ease;
+  }
+
+  .result-mult{
+    font-family:'Cinzel',serif;
+    font-weight:700;
+    font-size:46px;
+    color:var(--ash-dim);
+    letter-spacing:0.02em;
+    transition:color .25s ease, text-shadow .25s ease;
+  }
+  .result-mult.spinning{ animation:spin-blur .08s linear infinite; }
+  @keyframes spin-blur{ 0%{filter:blur(0px);} 50%{filter:blur(1.5px);} 100%{filter:blur(0px);} }
+
+  .result-flavor{
+    margin-top:8px;
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:13.5px;
+    color:var(--ash-dim);
+    min-height:18px;
+    max-width:300px;
+  }
+
+  .result-delta{
+    margin-top:6px;
+    font-size:12px;
+    letter-spacing:0.08em;
+    color:var(--ash-dim);
+  }
+
+  /* tier visual states */
+  .tier-0 .result-mult{ color:#8a716a; text-shadow:none; }
+  .tier-0{ border-color:rgba(90,70,64,0.5); }
+
+  .tier-05 .result-mult{ color:#b8a586; }
+  .tier-05{ border-color:rgba(184,165,134,0.35); }
+
+  .tier-1 .result-mult{ color:var(--ash); text-shadow:0 0 10px rgba(236,228,211,0.25); }
+  .tier-1{ border-color:rgba(236,228,211,0.25); }
+
+  .tier-2 .result-mult{ color:var(--gold-bright); text-shadow:0 0 18px rgba(240,205,122,0.55); }
+  .tier-2{ border-color:rgba(240,205,122,0.5); box-shadow:0 0 24px -6px rgba(240,205,122,0.35); }
+
+  .tier-3 .result-mult{ color:var(--vermilion-bright); text-shadow:0 0 22px rgba(224,85,47,0.7); }
+  .tier-3{ border-color:rgba(224,85,47,0.6); box-shadow:0 0 30px -4px rgba(224,85,47,0.45); }
+
+  .tier-5 .result-mult{
+    color:#ffe9b0;
+    text-shadow:0 0 10px #fff, 0 0 26px var(--gold-bright), 0 0 46px var(--plum-bright);
+    animation:jackpot-pulse 0.9s ease-in-out infinite;
+  }
+  .tier-5{ border-color:var(--gold-bright); box-shadow:0 0 50px -2px rgba(240,205,122,0.6), 0 0 90px -10px rgba(167,82,176,0.5); }
+  @keyframes jackpot-pulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.06);} }
+
+  .shake{ animation:shake .4s ease; }
+  @keyframes shake{
+    0%,100%{ transform:translate(0,0); }
+    20%{ transform:translate(-6px,2px); }
+    40%{ transform:translate(5px,-3px); }
+    60%{ transform:translate(-4px,3px); }
+    80%{ transform:translate(4px,-2px); }
+  }
+
+  /* ---------- History ---------- */
+  .history-row{
+    display:flex;
+    gap:6px;
+    justify-content:center;
+    flex-wrap:wrap;
+    min-height:24px;
+  }
+  .chip{
+    font-size:11px;
+    font-weight:700;
+    padding:3px 8px;
+    border-radius:20px;
+    border:1px solid var(--line);
+    color:var(--ash-dim);
+    font-family:'Manrope',sans-serif;
+    opacity:0;
+    animation:chip-in .3s ease forwards;
+  }
+  @keyframes chip-in{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:translateY(0);} }
+  .chip.c0{ border-color:rgba(90,70,64,0.6); color:#8a716a; }
+  .chip.c05{ border-color:rgba(184,165,134,0.5); color:#b8a586; }
+  .chip.c1{ border-color:rgba(236,228,211,0.3); color:var(--ash); }
+  .chip.c2{ border-color:rgba(240,205,122,0.6); color:var(--gold-bright); }
+  .chip.c3{ border-color:rgba(224,85,47,0.6); color:var(--vermilion-bright); }
+  .chip.c5{ border-color:var(--gold-bright); color:#ffe9b0; }
+
+  .streak-note{
+    text-align:center;
+    margin-top:14px;
+    font-size:11.5px;
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    color:var(--plum-bright);
+    min-height:14px;
+  }
+
+  .sound-toggle{
+    position:absolute;
+    top:14px; right:14px;
+    z-index:2;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ash-dim);
+    width:30px; height:30px;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .2s ease;
+  }
+  .sound-toggle:hover{ border-color:var(--gold); color:var(--gold-bright); }
+
+  footer.note{
+    text-align:center;
+    margin-top:18px;
+    font-size:10.5px;
+    color:rgba(154,148,136,0.5);
+    letter-spacing:0.04em;
+  }
+
+  .reset-link{
+    display:block;
+    margin:10px auto 0;
+    background:none;
+    border:none;
+    color:rgba(154,148,136,0.45);
+    font-family:'Manrope',sans-serif;
+    font-size:10.5px;
+    letter-spacing:0.04em;
+    text-decoration:underline;
+    cursor:pointer;
+    padding:4px;
+  }
+  .reset-link:hover{ color:var(--vermilion-bright); }
+
+  @media (max-width:400px){
+    h1{ font-size:34px; }
+    .kanji-watermark{ font-size:240px; }
+    .panel{ padding:30px 18px 24px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <filter id="heat-haze" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.010 0.035" numOctaves="2" seed="7" result="turb">
+      <animate attributeName="baseFrequency" values="0.010 0.035;0.014 0.045;0.010 0.035" dur="10s" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="turb" scale="26"/>
+  </filter>
+</svg>
+
+<canvas id="embers"></canvas>
+<div class="haze-layer"></div>
+<div class="vignette"></div>
+<canvas id="fireworks"></canvas>
+
+<div class="stage">
+  <div class="panel" id="panel">
+    <button class="sound-toggle" id="soundToggle" title="Звук">🔈</button>
+    <div class="kanji-watermark"></div>
+
+    <header>
+      <span class="eyebrow"> · K&S · Bank ·</span>
+      <h1>KAGERO<span>L U C K</span></h1>
+      <p class="subtitle">Банковская карта</p>
+    </header>
+
+    <div class="balance-row">
+      <span class="balance-label">Баланс</span>
+      <span class="balance-value" id="balanceValue">1000</span>
+      <span class="balance-unit">рё</span>
+    </div>
+
+    <div class="section-label">Выбери ставку</div>
+    <div class="bet-grid" id="betGrid">
+      <button class="bet-btn" data-bet="10">10</button>
+      <button class="bet-btn" data-bet="50">50</button>
+      <button class="bet-btn" data-bet="100">100</button>
+      <button class="bet-btn" data-bet="200">200</button>
+      <button class="bet-btn" data-bet="500">500</button>
+      <button class="bet-btn" data-bet="1000">1000</button>
+    </div>
+
+    <button class="play-btn" id="playBtn">· Проверить удачу ·</button>
+
+    <div class="result-window tier-1" id="resultWindow">
+      <div class="result-mult" id="resultMult">×—</div>
+      <div class="result-flavor" id="resultFlavor">Удача ждёт твоего решения…</div>
+      <div class="result-delta" id="resultDelta"></div>
+    </div>
+
+    <div class="section-label">История</div>
+    <div class="history-row" id="historyRow"></div>
+    <div class="streak-note" id="streakNote"></div>
+
+    <footer class="note">Виртуальная валюта «K&K» · без реальных ставок · только для развлечения</footer>
+    <button class="reset-link" id="resetProgress" title="Сбросить баланс и историю">Сбросить прогресс</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------------- Persistence ----------------
+  const SAVE_KEY = 'kagero_luck_save_v1';
+
+  function loadSave(){
+    try{
+      const raw = localStorage.getItem(SAVE_KEY);
+      if(!raw) return null;
+      const parsed = JSON.parse(raw);
+      if(typeof parsed.balance === 'number' && Array.isArray(parsed.history)) return parsed;
+      return null;
+    }catch(e){ return null; }
+  }
+
+  function saveState(){
+    try{
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        balance: balance,
+        history: historyLog,
+        streak: winStreak
+      }));
+    }catch(e){ /* storage unavailable (private mode etc.) — fail silently */ }
+  }
+
+  const saved = loadSave();
+
+  // ---------------- State ----------------
+  let balance = saved ? saved.balance : 1000;
+  let selectedBet = null;
+  let spinning = false;
+  let soundOn = true;
+  let winStreak = saved ? (saved.streak||0) : 0;
+  let historyLog = saved ? saved.history : []; // array of tier labels, e.g. 'tier-2'
+
+  const TIERS = [
+    { mult:0,   weight:20, cls:'tier-0',  chip:'c0',  label:'×0',   flavors:[
+        'Кагеро дрогнул — и унёс ставку с собой.',
+        'Пламя погасло, не оставив следа.',
+        'Марево сомкнулось. В этот раз — ничего.'
+      ]},
+    { mult:0.5, weight:25, cls:'tier-05', chip:'c05', label:'×0.5', flavors:[
+        'Половина ставки вернулась из дымки.',
+        'Удача качнулась, но не в твою сторону.',
+        'Тень монеты — лишь половина монеты.'
+      ]},
+    { mult:1,   weight:25, cls:'tier-1',  chip:'c1',  label:'×1',   flavors:[
+        'Марево вернуло ровно то, что взяло.',
+        'Равновесие. Кагеро остался безразличен.',
+        'Ставка прошла сквозь дымку и вернулась целой.'
+      ]},
+    { mult:2,   weight:15, cls:'tier-2',  chip:'c2',  label:'×2',   flavors:[
+        'Золото блеснуло в мареве — удвоение!',
+        'Кагеро благосклонен. Ставка удвоена.',
+        'Дымка расступилась, открыв прибыль.'
+      ]},
+    { mult:3,   weight:10, cls:'tier-3',  chip:'c3',  label:'×3',   flavors:[
+        'Пламя взметнулось втрое ярче обычного!',
+        'Редкая вспышка удачи — тройной выигрыш!',
+        'Кагеро раскрылся во всей яркости огня.'
+      ]},
+    { mult:5,   weight:5,  cls:'tier-5',  chip:'c5',  label:'×5',   flavors:[
+        'ДЖЕКПОТ. Дух Кагеро явил себя целиком!',
+        'Небывалое марево — пятикратная милость!',
+        'Легенда о Кагеро только что стала правдой.'
+      ]},
+  ];
+
+  const totalWeight = TIERS.reduce((s,t)=>s+t.weight,0);
+
+  function pickTier(){
+    let r = Math.random()*totalWeight;
+    for(const t of TIERS){
+      if(r < t.weight) return t;
+      r -= t.weight;
+    }
+    return TIERS[TIERS.length-1];
+  }
+
+  // ---------------- DOM refs ----------------
+  const balanceValue = document.getElementById('balanceValue');
+  const betGrid = document.getElementById('betGrid');
+  const playBtn = document.getElementById('playBtn');
+  const resultWindow = document.getElementById('resultWindow');
+  const resultMult = document.getElementById('resultMult');
+  const resultFlavor = document.getElementById('resultFlavor');
+  const resultDelta = document.getElementById('resultDelta');
+  const historyRow = document.getElementById('historyRow');
+  const streakNote = document.getElementById('streakNote');
+  const soundToggle = document.getElementById('soundToggle');
+  const panel = document.getElementById('panel');
+
+  function updateBalanceUI(){
+    balanceValue.textContent = Math.round(balance);
+    balanceValue.classList.add('pulse');
+    setTimeout(()=>balanceValue.classList.remove('pulse'), 250);
+    refreshBetButtons();
+  }
+
+  function refreshBetButtons(){
+    document.querySelectorAll('.bet-btn').forEach(btn=>{
+      const val = Number(btn.dataset.bet);
+      btn.disabled = val > balance || spinning;
+    });
+    playBtn.disabled = !selectedBet || selectedBet > balance || spinning;
+  }
+
+  betGrid.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.bet-btn');
+    if(!btn || btn.disabled) return;
+    document.querySelectorAll('.bet-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedBet = Number(btn.dataset.bet);
+    refreshBetButtons();
+  });
+
+  soundToggle.addEventListener('click', ()=>{
+    soundOn = !soundOn;
+    soundToggle.textContent = soundOn ? '🔈' : '🔇';
+  });
+
+  // ---------------- Simple WebAudio chime ----------------
+  let actx = null;
+  function chime(freqs, dur=0.18, type='sine', gainMax=0.06){
+    if(!soundOn) return;
+    try{
+      actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+      const t0 = actx.currentTime;
+      freqs.forEach((f,i)=>{
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.type = type;
+        osc.frequency.value = f;
+        gain.gain.setValueAtTime(0, t0+i*0.05);
+        gain.gain.linearRampToValueAtTime(gainMax, t0+i*0.05+0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0+i*0.05+dur);
+        osc.connect(gain).connect(actx.destination);
+        osc.start(t0+i*0.05);
+        osc.stop(t0+i*0.05+dur+0.05);
+      });
+    }catch(e){ /* audio unsupported, ignore */ }
+  }
+
+  function soundForTier(mult){
+    if(mult===0) chime([180,120],0.3,'sawtooth',0.05);
+    else if(mult===0.5) chime([260,220],0.2,'sine',0.05);
+    else if(mult===1) chime([392],0.18,'sine',0.05);
+    else if(mult===2) chime([523,659],0.22,'sine',0.07);
+    else if(mult===3) chime([523,659,784],0.25,'triangle',0.08);
+    else if(mult===5) chime([523,659,784,1046,1318],0.4,'triangle',0.09);
+  }
+
+  // ---------------- Spin logic ----------------
+  playBtn.addEventListener('click', ()=>{
+    if(spinning || !selectedBet || selectedBet > balance) return;
+    spinning = true;
+    refreshBetButtons();
+    document.querySelectorAll('.bet-btn').forEach(b=>b.disabled=true);
+
+    const bet = selectedBet;
+    const outcome = pickTier();
+
+    resultWindow.className = 'result-window';
+    resultMult.classList.add('spinning');
+    resultFlavor.textContent = 'Марево дрожит…';
+    resultDelta.textContent = '';
+
+    let ticks = 0;
+    const maxTicks = 16;
+    const spinInterval = setInterval(()=>{
+      const rt = TIERS[Math.floor(Math.random()*TIERS.length)];
+      resultMult.textContent = rt.label;
+      ticks++;
+      if(ticks >= maxTicks){
+        clearInterval(spinInterval);
+        settleResult(bet, outcome);
+      }
+    }, 70);
+  });
+
+  function settleResult(bet, outcome){
+    resultMult.classList.remove('spinning');
+    resultMult.textContent = outcome.label;
+    resultWindow.classList.add(outcome.cls);
+    resultFlavor.textContent = outcome.flavors[Math.floor(Math.random()*outcome.flavors.length)];
+
+    const winAmount = bet * outcome.mult;
+    const delta = winAmount - bet;
+    balance = balance - bet + winAmount;
+    updateBalanceUI();
+
+    resultDelta.textContent = (delta>=0?'+':'') + Math.round(delta) + ' рё';
+    resultDelta.style.color = delta>0 ? 'var(--gold-bright)' : (delta<0 ? '#c07a6a' : 'var(--ash-dim)');
+
+    // streak tracking
+    if(outcome.mult >= 2){ winStreak++; } else { winStreak = 0; }
+    if(winStreak >= 2){
+      streakNote.textContent = `Дух Кагеро благосклонен: серия из ${winStreak} удачных исходов подряд`;
+    } else {
+      streakNote.textContent = '';
+    }
+
+    addHistoryChip({chip:outcome.chip, label:outcome.label}, true);
+    saveState();
+    soundForTier(outcome.mult);
+
+    // effects scaled by tier
+    if(outcome.mult >= 5){
+      panel.classList.remove('shake'); void panel.offsetWidth; panel.classList.add('shake');
+      burstFireworks(46, 'jackpot');
+    } else if(outcome.mult >= 3){
+      burstFireworks(28, 'big');
+    } else if(outcome.mult >= 2){
+      burstFireworks(14, 'normal');
+    } else if(outcome.mult >= 1){
+      burstFireworks(4, 'small');
+    }
+    // mult 0 and 0.5 -> no fireworks, just a dim ash puff
+    if(outcome.mult < 1){
+      ashPuff();
+    }
+
+    spinning = false;
+    refreshBetButtons();
+  }
+
+  function addHistoryChip(outcome){
+    const chip = document.createElement('span');
+    chip.className = 'chip ' + outcome.chip;
+    chip.textContent = outcome.label;
+    historyRow.appendChild(chip);
+    while(historyRow.children.length > 10){
+      historyRow.removeChild(historyRow.firstChild);
+    }
+  }
+
+  // ---------------- Ambient embers canvas ----------------
+  const emberCanvas = document.getElementById('embers');
+  const ectx = emberCanvas.getContext('2d');
+  let W,H;
+  function resize(){
+    W = emberCanvas.width = window.innerWidth;
+    H = emberCanvas.height = window.innerHeight;
+    fwCanvas.width = W; fwCanvas.height = H;
+  }
+  const embers = [];
+  const EMBER_COUNT = 60;
+  function initEmbers(){
+    embers.length = 0;
+    for(let i=0;i<EMBER_COUNT;i++){
+      embers.push(spawnEmber(true));
+    }
+  }
+  function spawnEmber(randomY){
+    const colors = ['180,64,42','201,162,75','107,44,107'];
+    return {
+      x: Math.random()*W,
+      y: randomY ? Math.random()*H : H + 10,
+      r: 0.6 + Math.random()*2.2,
+      speed: 0.25 + Math.random()*0.6,
+      drift: (Math.random()-0.5)*0.4,
+      alpha: 0.15 + Math.random()*0.4,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      flick: Math.random()*Math.PI*2
+    };
+  }
+  function drawEmbers(){
+    ectx.clearRect(0,0,W,H);
+    for(const e of embers){
+      e.y -= e.speed;
+      e.x += Math.sin(e.flick)*0.15 + e.drift*0.05;
+      e.flick += 0.02;
+      if(e.y < -10){ Object.assign(e, spawnEmber(false)); }
+      const a = e.alpha * (0.6 + 0.4*Math.sin(e.flick));
+      ectx.beginPath();
+      ectx.fillStyle = `rgba(${e.color},${a})`;
+      ectx.arc(e.x, e.y, e.r, 0, Math.PI*2);
+      ectx.fill();
+    }
+    requestAnimationFrame(drawEmbers);
+  }
+
+  // ---------------- Fireworks canvas ----------------
+  const fwCanvas = document.getElementById('fireworks');
+  const fctx = fwCanvas.getContext('2d');
+  let particles = [];
+
+  function burstFireworks(count, kind){
+    const cx = W/2, cy = H*0.38;
+    const palette = kind==='jackpot'
+      ? ['255,233,176','240,205,122','167,82,176','255,255,255']
+      : kind==='big'
+      ? ['224,85,47','240,205,122','255,255,255']
+      : kind==='normal'
+      ? ['240,205,122','236,228,211']
+      : ['236,228,211'];
+
+    const bursts = kind==='jackpot' ? 3 : kind==='big' ? 2 : 1;
+    for(let b=0; b<bursts; b++){
+      setTimeout(()=>{
+        const ox = cx + (Math.random()-0.5)*W*0.4;
+        const oy = cy + (Math.random()-0.5)*H*0.15;
+        for(let i=0;i<count;i++){
+          const angle = (Math.PI*2*i/count) + Math.random()*0.2;
+          const speed = 2 + Math.random()*(kind==='jackpot'?5:3);
+          particles.push({
+            x: ox, y: oy,
+            vx: Math.cos(angle)*speed,
+            vy: Math.sin(angle)*speed,
+            life: 1,
+            decay: 0.008 + Math.random()*0.01,
+            color: palette[Math.floor(Math.random()*palette.length)],
+            r: 1.4 + Math.random()*1.8
+          });
+        }
+      }, b*220);
+    }
+  }
+
+  function ashPuff(){
+    const cx = W/2, cy = H*0.4;
+    for(let i=0;i<10;i++){
+      const angle = Math.random()*Math.PI*2;
+      const speed = 0.4 + Math.random()*0.8;
+      particles.push({
+        x:cx, y:cy,
+        vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed - 0.3,
+        life:1, decay:0.02+Math.random()*0.01,
+        color:'106,96,90', r:1+Math.random()*1.4
+      });
+    }
+  }
+
+  function drawFireworks(){
+    fctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.03; // gravity
+      p.life -= p.decay;
+      if(p.life > 0){
+        fctx.beginPath();
+        fctx.fillStyle = `rgba(${p.color},${Math.max(p.life,0)})`;
+        fctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        fctx.fill();
+      }
+    });
+    particles = particles.filter(p=>p.life>0 && p.y < H+40);
+    requestAnimationFrame(drawFireworks);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  initEmbers();
+  drawEmbers();
+  drawFireworks();
+  refreshBetButtons();
+})();
+</script>
+</body>
+</html>
